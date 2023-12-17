@@ -34,9 +34,15 @@ resource "aws_subnet" "private_subnets" {
   }
 }
 
-# Create a security group allowing all inbound traffic (for testing only)
-resource "aws_security_group" "security_group" {
+resource "aws_security_group" "bastion-host_sg" {
   vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   egress {
     from_port   = 0
@@ -45,15 +51,8 @@ resource "aws_security_group" "security_group" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  ingress {
-    from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   tags = {
-    Name = "Security Group"
+    Name = "Bastion Host Security Group"
   }
 }
 
@@ -155,11 +154,34 @@ resource "aws_vpc_endpoint_route_table_association" "s3_route_assoc" {
   route_table_id = aws_route_table.private_route_table[count.index].id
 }
 
+resource "aws_security_group" "lb_sg" {
+  name = "Load Balancer Security Group"
+  vpc_id = aws_vpc.main.id
+
+  egress {
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "Security Group"
+  }
+}
+
 resource "aws_lb" "ecs_alb" {
     name               = "ecs-alb"
     internal           = false
     load_balancer_type = "application"
-    security_groups    = [aws_security_group.security_group.id]
+    security_groups    = [aws_security_group.lb_sg.id]
     subnets            =  aws_subnet.public_subnets[*].id
 
     tags = {

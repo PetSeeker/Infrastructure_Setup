@@ -10,10 +10,6 @@ variable "private_subnet_ids" {
   description = "List of private subnet IDs."
 }
 
-variable "security_group_id" {
-  description = "The ID of the security group."
-}
-
 variable "load_balancer_arn" {
   description = "The ARN of the load balancer."
 }
@@ -36,4 +32,10 @@ variable "db_host" {
 
 variable "db_port" {
   description = "The port of the database."
+}
+
+variable "public_subnet_cidrs" {
+  type        = list(string)
+  description = "Public Subnet CIDR values"
+  default     = ["10.0.0.0/26", "10.0.0.64/26"]
 }

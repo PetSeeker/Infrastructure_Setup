@@ -39,6 +39,47 @@ data "aws_ami" "amazon_linux_2" {
     owners = ["amazon"]
 }
 
+resource "aws_security_group" "comments-ratings-api_sg" {
+    name        = "Comments & Ratings API Security Group"
+    description = "Allow all inbound traffic"
+    vpc_id      = var.vpc_id
+
+    ingress {
+        description = "Allow http traffic from load balancer"
+        from_port   = 80
+        to_port     = 80
+        protocol    = "tcp"
+        cidr_blocks = var.public_subnet_cidrs
+    }
+
+    ingress {
+        description = "Allow http traffic from load balancer"
+        from_port   = 8003
+        to_port     = 8003
+        protocol    = "tcp"
+        cidr_blocks = var.public_subnet_cidrs
+    }
+
+    ingress {
+        description = "Allow ssh traffic from bastion host"
+        from_port   = 22
+        to_port     = 22
+        protocol    = "tcp"
+        cidr_blocks = var.public_subnet_cidrs
+    }
+
+    egress {
+      from_port   = 0
+      to_port     = 65535
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+
+    tags = {
+      Name = "Comments & Ratings API Security Group"
+    }
+}
+
 resource "aws_launch_template" "ecs_lt" {
     name_prefix   = "ecs-template"
     image_id      = data.aws_ami.amazon_linux_2.id
@@ -47,7 +88,7 @@ resource "aws_launch_template" "ecs_lt" {
       name = "ecsInstanceRole"
     }
     key_name               = "petseeker23"
-    vpc_security_group_ids = [var.security_group_id]
+    vpc_security_group_ids = [aws_security_group.comments-ratings-api_sg.id]
 
     block_device_mappings {
         device_name = "/dev/xvda"

@@ -10,10 +10,6 @@ output "private_subnet_ids" {
   value = aws_subnet.private_subnets[*].id
 }
 
-output "security_group_id" {
-  value = aws_security_group.security_group.id
-}
-
 output "load_balancer_arn" {
   value = aws_lb.ecs_alb.arn
 }

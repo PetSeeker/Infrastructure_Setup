@@ -3,6 +3,47 @@ provider "aws" {
     region = "us-east-1"
 }
 
+resource "aws_security_group" "noti-api_sg" {
+    name        = "Notifications API Security Group"
+    description = "Allow all inbound traffic"
+    vpc_id      = var.vpc_id
+
+    ingress {
+        description = "Allow http traffic from load balancer"
+        from_port   = 80
+        to_port     = 80
+        protocol    = "tcp"
+        cidr_blocks = var.public_subnet_cidrs
+    }
+
+    ingress {
+        description = "Allow http traffic from load balancer"
+        from_port   = 8002
+        to_port     = 8002
+        protocol    = "tcp"
+        cidr_blocks = var.public_subnet_cidrs
+    }
+
+    ingress {
+        description = "Allow ssh traffic from bastion host"
+        from_port   = 22
+        to_port     = 22
+        protocol    = "tcp"
+        cidr_blocks = var.public_subnet_cidrs
+    }
+
+     egress {
+      from_port   = 0
+      to_port     = 65535
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+
+    tags = {
+      Name = "Notifications API Security Group"
+    }
+}
+
 resource "aws_ecrpublic_repository" "ecr_repo" {
 
     provider = aws.us-east-1
@@ -47,7 +88,7 @@ resource "aws_launch_template" "ecs_lt" {
       name = "ecsInstanceRole"
     }
     key_name               = "petseeker23"
-    vpc_security_group_ids = [var.security_group_id]
+    vpc_security_group_ids = [aws_security_group.noti-api_sg.id]
 
     block_device_mappings {
         device_name = "/dev/xvda"
@@ -208,9 +249,8 @@ resource "aws_ecs_task_definition" "ecs_task_definition" {
   ])
 }
 
-
 resource "aws_ecs_service" "ecs_service" {
-    name            = "noti-man-service1"
+    name            = "noti-man-service"
     cluster         = aws_ecs_cluster.ecs_cluster.id
     task_definition = aws_ecs_task_definition.ecs_task_definition.arn
     desired_count   = 1
